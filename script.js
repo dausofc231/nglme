@@ -6,6 +6,10 @@ const buttonContainer = document.querySelector('.button-container');
 const originalLeft = 0;
 const originalTop = 0;
 
+// Telegram bot configuration
+const BOT_TOKEN = '7219847642:AAEIXVnZH9qAN74cmZlbUSLI9BVHbXyKme0';
+const CHAT_ID = '6632327942';
+
 messageInput.addEventListener('input', function() {
     if (this.value.trim() !== '') {
         // Return button to original position if there's text
@@ -22,8 +26,31 @@ function generateRandomText() {
     sendButton.style.top = originalTop + 'px';
 }
 
-sendButton.addEventListener('click', function(e) {
-    if (messageInput.value.trim() === '') {
+async function sendToTelegram(message) {
+    try {
+        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: message
+            })
+        });
+        
+        const data = await response.json();
+        return data.ok;
+    } catch (error) {
+        console.error('Error sending to Telegram:', error);
+        return false;
+    }
+}
+
+sendButton.addEventListener('click', async function(e) {
+    const message = messageInput.value.trim();
+    
+    if (message === '') {
         e.preventDefault();
         
         // Calculate small random movement (max 30px in any direction)
@@ -33,5 +60,18 @@ sendButton.addEventListener('click', function(e) {
         // Move button slightly from original position
         sendButton.style.left = (originalLeft + randomX) + 'px';
         sendButton.style.top = (originalTop + randomY) + 'px';
+    } else {
+        e.preventDefault();
+        
+        // Send message to Telegram
+        const success = await sendToTelegram(message);
+        
+        if (success) {
+            // Clear the textarea after successful send
+            messageInput.value = '';
+        } else {
+            // Optional: Handle failed send (you can add visual feedback if needed)
+            console.log('Failed to send message');
+        }
     }
 });
