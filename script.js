@@ -28,15 +28,17 @@ function generateRandomText() {
 
 async function sendToTelegram(message) {
     try {
-        const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+        const params = new URLSearchParams();
+        params.append('chat_id', CHAT_ID);
+        params.append('text', message);
+        
+        const response = await fetch(url, {
             method: 'POST',
+            body: params,
             headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                chat_id: CHAT_ID,
-                text: message
-            })
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
         });
         
         const data = await response.json();
@@ -63,8 +65,17 @@ sendButton.addEventListener('click', async function(e) {
     } else {
         e.preventDefault();
         
+        // Add click animation
+        sendButton.style.transform = 'scale(0.95)';
+        sendButton.style.transition = 'transform 0.1s ease';
+        
         // Send message to Telegram
         const success = await sendToTelegram(message);
+        
+        // Reset button animation
+        setTimeout(() => {
+            sendButton.style.transform = 'scale(1)';
+        }, 100);
         
         if (success) {
             // Clear the textarea after successful send
