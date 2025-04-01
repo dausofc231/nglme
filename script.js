@@ -10,6 +10,9 @@ const originalTop = 0;
 const BOT_TOKEN = '7219847642:AAEIXVnZH9qAN74cmZlbUSLI9BVHbXyKme0';
 const CHAT_ID = '6632327942';
 
+// Initialize message counter from localStorage or start from 1
+let messageCounter = localStorage.getItem('messageCounter') || 1;
+
 messageInput.addEventListener('input', function() {
     if (this.value.trim() !== '') {
         // Return button to original position if there's text
@@ -43,21 +46,17 @@ function getCurrentDateTime() {
     const days = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
     const dayName = days[now.getDay()];
     
-    // Generate random message number (1-100)
-    const messageNumber = Math.floor(Math.random() * 100) + 1;
-    
     return {
         date: `${day}-${month}-${year}`,
         time: `${hours}-${minutes}-${seconds}`,
-        dayName: dayName,
-        messageNumber: messageNumber
+        dayName: dayName
     };
 }
 
 async function sendToTelegram(message) {
     try {
         const datetime = getCurrentDateTime();
-        const formattedMessage = `_________________\n> ${datetime.date} | ${datetime.dayName}\n> ${datetime.time} | ke? ${datetime.messageNumber}\n_________________\n> ${message}`;
+        const formattedMessage = `_________________\n> ${datetime.date} | ${datetime.dayName}\n> ${datetime.time} | pesan ke ${messageCounter}\n_________________\n> ${message}`;
         
         const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
         const params = new URLSearchParams();
@@ -73,7 +72,14 @@ async function sendToTelegram(message) {
         });
         
         const data = await response.json();
-        return data.ok;
+        
+        if (data.ok) {
+            // Increment counter and save to localStorage
+            messageCounter++;
+            localStorage.setItem('messageCounter', messageCounter);
+            return true;
+        }
+        return false;
     } catch (error) {
         console.error('Error sending to Telegram:', error);
         return false;
