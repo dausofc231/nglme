@@ -11,44 +11,12 @@ export default function AuthPage() {
     email: '',
     password: ''
   });
-  const [recaptchaToken, setRecaptchaToken] = useState('');
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   
   const { user, register, login } = useAuth();
   const router = useRouter();
-
-  // ✅ Render reCAPTCHA v2 setelah script dimuat
-  useEffect(() => {
-    const loadRecaptcha = () => {
-      if (window.grecaptcha && !window.grecaptcha.rendered) {
-        window.grecaptcha.render('recaptcha-container', {
-          sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-          callback: (token) => {
-            setRecaptchaToken(token);
-            setErrors(prev => ({ ...prev, recaptcha: '' }));
-          },
-          'expired-callback': () => setRecaptchaToken(''),
-          'error-callback': () =>
-            setErrors(prev => ({ ...prev, recaptcha: 'Error reCAPTCHA' })),
-        });
-        window.grecaptcha.rendered = true;
-      }
-    };
-
-    if (typeof window !== 'undefined' && !window.grecaptcha) {
-      const script = document.createElement('script');
-      script.src =
-        'https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit';
-      script.async = true;
-      script.defer = true;
-      script.onload = loadRecaptcha;
-      document.body.appendChild(script);
-    } else {
-      loadRecaptcha();
-    }
-  }, []);
 
   useEffect(() => {
     if (user && isLogin) {
@@ -79,10 +47,6 @@ export default function AuthPage() {
       newErrors.password = 'Password minimal 6 karakter';
     }
 
-    if (!recaptchaToken) {
-      newErrors.recaptcha = 'Harap verifikasi reCAPTCHA';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,7 +54,9 @@ export default function AuthPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
     setIsLoading(true);
 
@@ -107,22 +73,27 @@ export default function AuthPage() {
         });
         setIsLogin(true);
         setFormData({ username: '', email: '', password: '' });
-        setRecaptchaToken('');
       }
     } catch (error) {
       let errorMessage = 'Terjadi kesalahan';
+      
       switch (error.code) {
         case 'auth/email-already-in-use':
-          errorMessage = 'Email sudah terdaftar'; break;
+          errorMessage = 'Email sudah terdaftar';
+          break;
         case 'auth/user-not-found':
-          errorMessage = 'Email tidak terdaftar'; break;
+          errorMessage = 'Email tidak terdaftar';
+          break;
         case 'auth/wrong-password':
-          errorMessage = 'Password salah'; break;
+          errorMessage = 'Password salah';
+          break;
         case 'auth/invalid-email':
-          errorMessage = 'Format email tidak valid'; break;
+          errorMessage = 'Format email tidak valid';
+          break;
         default:
           errorMessage = error.message;
       }
+      
       setNotification({ message: errorMessage, type: 'error' });
     } finally {
       setIsLoading(false);
@@ -151,9 +122,12 @@ export default function AuthPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Username Field (Register only) */}
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
               <input
                 type="text"
                 value={formData.username}
@@ -171,7 +145,9 @@ export default function AuthPage() {
 
           {/* Email Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
             <input
               type="email"
               value={formData.email}
@@ -189,9 +165,14 @@ export default function AuthPage() {
           {/* Password Field */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
               {isLogin && (
-                <button type="button" className="text-sm text-indigo-600 hover:text-indigo-500">
+                <button
+                  type="button"
+                  className="text-sm text-indigo-600 hover:text-indigo-500"
+                >
                   Lupa password?
                 </button>
               )}
@@ -210,12 +191,6 @@ export default function AuthPage() {
             )}
           </div>
 
-          {/* ✅ FIXED reCAPTCHA */}
-          <div id="recaptcha-container" className="mt-4 flex justify-center"></div>
-          {errors.recaptcha && (
-            <p className="mt-1 text-sm text-red-600 text-center">{errors.recaptcha}</p>
-          )}
-
           {/* Submit Button */}
           <button
             type="submit"
@@ -226,6 +201,7 @@ export default function AuthPage() {
           </button>
         </form>
 
+        {/* Toggle between Login/Register */}
         <div className="mt-6 text-center">
           <p className="text-gray-600">
             {isLogin ? 'Belum punya akun? ' : 'Sudah punya akun? '}
@@ -234,7 +210,6 @@ export default function AuthPage() {
               onClick={() => {
                 setIsLogin(!isLogin);
                 setErrors({});
-                setRecaptchaToken('');
               }}
               className="text-indigo-600 hover:text-indigo-500 font-medium"
             >
