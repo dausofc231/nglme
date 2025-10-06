@@ -110,7 +110,7 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <div className="w-20 h-20 mx-auto mb-4">
             <Image
-              src="../media/logo.png"
+              src="../media/logo_023321.png"
               alt="samsulShop"
               width={80}
               height={80}
