@@ -1,4 +1,3 @@
-// pages/auth.js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
@@ -12,33 +11,33 @@ export default function AuthPage() {
   const router = useRouter();
   const { user, register, login, logout } = useAuth();
 
-  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot' | 'reset'
+  const [mode, setMode] = useState('login'); // login | register | forgot | reset
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     newPassword: '',
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Check URL untuk reset password
+  // ✅ Detect reset password mode
   useEffect(() => {
     if (router.query.mode === 'resetPassword' && router.query.oobCode) {
       setMode('reset');
     }
   }, [router.query]);
 
-  // ✅ Redirect ke dashboard kalau udah login
+  // ✅ Redirect ke dashboard jika sudah login
   useEffect(() => {
     if (user && mode === 'login') router.push('/dashboard');
   }, [user, mode, router]);
 
-  // ✅ Custom error message dari Firebase
+  // ✅ Mapping custom error Firebase
   const firebaseErrorMap = {
     'auth/invalid-email': 'Format email tidak valid.',
     'auth/user-disabled': 'Akun kamu telah dinonaktifkan.',
@@ -55,7 +54,7 @@ export default function AuthPage() {
     return firebaseErrorMap[code] || 'Terjadi kesalahan, coba lagi nanti.';
   };
 
-  // ✅ Validasi input form
+  // ✅ Validasi form input
   const validateForm = () => {
     const newErrors = {};
 
@@ -87,7 +86,7 @@ export default function AuthPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ Handle submit
+  // ✅ Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -133,9 +132,10 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      {/* ✅ Notification Custom */}
       {notification && (
-        <Notification 
-          message={notification.message} 
+        <Notification
+          message={notification.message}
           type={notification.type}
           onClose={() => setNotification(null)}
         />
@@ -165,15 +165,16 @@ export default function AuthPage() {
           </h1>
         </div>
 
+        {/* ✅ FORM */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* USERNAME */}
+          {/* Username */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
               <input
                 type="text"
                 value={formData.username}
-                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                onChange={(e) => setFormData((p) => ({ ...p, username: e.target.value }))}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                   errors.username ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -183,14 +184,14 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* EMAIL */}
+          {/* Email */}
           {(mode !== 'reset') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -200,7 +201,7 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* PASSWORD / NEW PASSWORD */}
+          {/* Password / New Password */}
           {(mode === 'login' || mode === 'register' || mode === 'reset') && (
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -218,7 +219,6 @@ export default function AuthPage() {
                 )}
               </div>
 
-              {/* Input Password */}
               <div className="relative">
                 <input
                   type={
@@ -228,19 +228,15 @@ export default function AuthPage() {
                   }
                   value={mode === 'reset' ? formData.newPassword : formData.password}
                   onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
+                    setFormData((p) => ({
+                      ...p,
                       [mode === 'reset' ? 'newPassword' : 'password']: e.target.value,
                     }))
                   }
                   className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
                     errors.password || errors.newPassword ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder={
-                    mode === 'reset'
-                      ? 'Masukkan password baru'
-                      : 'Masukkan password'
-                  }
+                  placeholder={mode === 'reset' ? 'Masukkan password baru' : 'Masukkan password'}
                 />
                 <button
                   type="button"
@@ -269,7 +265,7 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* SUBMIT BUTTON */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={isLoading}
@@ -287,7 +283,7 @@ export default function AuthPage() {
           </button>
         </form>
 
-        {/* FOOTER */}
+        {/* ✅ Footer */}
         <div className="mt-6 text-center">
           {mode === 'login' && (
             <p className="text-gray-600">
