@@ -16,10 +16,11 @@ export default function AuthPage() {
   const [notification, setNotification] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { user, register, login } = useAuth();
+  const { user, register, login, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
+    // cuma redirect kalau login benar2 dilakukan
     if (user && isLogin) {
       router.push('/dashboard');
     }
@@ -54,7 +55,6 @@ export default function AuthPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
     setIsLoading(true);
 
@@ -65,14 +65,22 @@ export default function AuthPage() {
         router.push('/dashboard');
       } else {
         await register(formData.email, formData.password, formData.username);
-        setNotification({ message: 'Registrasi berhasil! Silakan login.', type: 'success' });
+
+        // langsung logout agar user tidak masuk otomatis
+        await logout();
+
+        setNotification({ 
+          message: 'Registrasi berhasil! Silakan login dengan akun yang baru dibuat.', 
+          type: 'success' 
+        });
+
+        // ubah ke mode login UI
         setIsLogin(true);
         setFormData({ username: '', email: formData.email, password: '' });
       }
     } catch (error) {
       console.error(error);
       let errorMessage = 'Terjadi kesalahan';
-      
       switch (error.code) {
         case 'auth/email-already-in-use':
           errorMessage = 'Email sudah terdaftar';
@@ -106,12 +114,11 @@ export default function AuthPage() {
       )}
       
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 mx-auto mb-4">
             <Image
               src="../media/logo_023321.png"
-              alt="samsulShop"
+              alt="Logo"
               width={80}
               height={80}
               className="mx-auto rounded-full shadow-sm"
@@ -207,4 +214,4 @@ export default function AuthPage() {
       </div>
     </div>
   );
-}
+ }
