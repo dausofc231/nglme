@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 import Notification from '../components/Notification';
 import Image from 'next/image';
+import { Eye, EyeOff } from 'lucide-react';
 import { sendPasswordResetEmail, confirmPasswordReset } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
@@ -11,33 +12,50 @@ export default function AuthPage() {
   const router = useRouter();
   const { user, register, login, logout } = useAuth();
 
-  // UI mode
   const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot' | 'reset'
-
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     newPassword: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   const [errors, setErrors] = useState({});
   const [notification, setNotification] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // check if URL contains reset code
+  // ✅ Check URL untuk reset password
   useEffect(() => {
     if (router.query.mode === 'resetPassword' && router.query.oobCode) {
       setMode('reset');
     }
   }, [router.query]);
 
-  // redirect ke dashboard jika login
+  // ✅ Redirect ke dashboard kalau udah login
   useEffect(() => {
     if (user && mode === 'login') router.push('/dashboard');
   }, [user, mode, router]);
 
-  // validasi input
+  // ✅ Custom error message dari Firebase
+  const firebaseErrorMap = {
+    'auth/invalid-email': 'Format email tidak valid.',
+    'auth/user-disabled': 'Akun kamu telah dinonaktifkan.',
+    'auth/user-not-found': 'Email tidak terdaftar.',
+    'auth/missing-password': 'Password wajib diisi.',
+    'auth/wrong-password': 'Password salah, coba lagi.',
+    'auth/invalid-credential': 'Email atau password salah.',
+    'auth/email-already-in-use': 'Email sudah terdaftar.',
+    'auth/weak-password': 'Password terlalu lemah (minimal 6 karakter).',
+  };
+
+  const getErrorMessage = (error) => {
+    const code = error?.code;
+    return firebaseErrorMap[code] || 'Terjadi kesalahan, coba lagi nanti.';
+  };
+
+  // ✅ Validasi input form
   const validateForm = () => {
     const newErrors = {};
 
@@ -69,7 +87,7 @@ export default function AuthPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // handle submit form
+  // ✅ Handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -90,7 +108,7 @@ export default function AuthPage() {
       }
       else if (mode === 'forgot') {
         const actionCodeSettings = {
-          url: `${window.location.origin}/auth`, // arahkan kembali ke web kamu
+          url: `${window.location.origin}/auth`,
           handleCodeInApp: true,
         };
         await sendPasswordResetEmail(auth, formData.email, actionCodeSettings);
@@ -102,12 +120,12 @@ export default function AuthPage() {
         const { oobCode } = router.query;
         await confirmPasswordReset(auth, oobCode, formData.newPassword);
         setNotification({ message: 'Password berhasil direset! Silakan login kembali.', type: 'success' });
-        router.replace('/auth'); // hapus query agar balik ke login UI
+        router.replace('/auth');
         setMode('login');
       }
     } catch (error) {
       console.error(error);
-      setNotification({ message: error.message, type: 'error' });
+      setNotification({ message: getErrorMessage(error), type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -124,12 +142,12 @@ export default function AuthPage() {
       )}
 
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        {/* Logo */}
+        {/* ✅ Logo */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 mx-auto mb-4">
             <Image
-              src="/datakuy/logo.png"
-              alt="Logo Datakuy"
+              src="/media/logo.png"
+              alt="Logo"
               width={80}
               height={80}
               className="mx-auto rounded-full shadow-sm"
@@ -148,7 +166,7 @@ export default function AuthPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* REGISTER */}
+          {/* USERNAME */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
@@ -182,11 +200,13 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* PASSWORD */}
-          {(mode === 'login' || mode === 'register') && (
+          {/* PASSWORD / NEW PASSWORD */}
+          {(mode === 'login' || mode === 'register' || mode === 'reset') && (
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  {mode === 'reset' ? 'Password Baru' : 'Password'}
+                </label>
                 {mode === 'login' && (
                   <button
                     type="button"
@@ -197,33 +217,55 @@ export default function AuthPage() {
                   </button>
                 )}
               </div>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                  errors.password ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Masukkan password"
-              />
-              {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-            </div>
-          )}
 
-          {/* RESET PASSWORD */}
-          {mode === 'reset' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password Baru</label>
-              <input
-                type="password"
-                value={formData.newPassword}
-                onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                  errors.newPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Masukkan password baru"
-              />
-              {errors.newPassword && <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>}
+              {/* Input Password */}
+              <div className="relative">
+                <input
+                  type={
+                    mode === 'reset'
+                      ? showNewPassword ? 'text' : 'password'
+                      : showPassword ? 'text' : 'password'
+                  }
+                  value={mode === 'reset' ? formData.newPassword : formData.password}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      [mode === 'reset' ? 'newPassword' : 'password']: e.target.value,
+                    }))
+                  }
+                  className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                    errors.password || errors.newPassword ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder={
+                    mode === 'reset'
+                      ? 'Masukkan password baru'
+                      : 'Masukkan password'
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    mode === 'reset'
+                      ? setShowNewPassword((p) => !p)
+                      : setShowPassword((p) => !p)
+                  }
+                  className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                >
+                  {mode === 'reset'
+                    ? showNewPassword
+                      ? <EyeOff size={20} />
+                      : <Eye size={20} />
+                    : showPassword
+                      ? <EyeOff size={20} />
+                      : <Eye size={20} />}
+                </button>
+              </div>
+
+              {(errors.password || errors.newPassword) && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password || errors.newPassword}
+                </p>
+              )}
             </div>
           )}
 
@@ -245,7 +287,7 @@ export default function AuthPage() {
           </button>
         </form>
 
-        {/* FOOTER LINKS */}
+        {/* FOOTER */}
         <div className="mt-6 text-center">
           {mode === 'login' && (
             <p className="text-gray-600">
