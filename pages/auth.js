@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 import Notification from '../components/Notification';
+import Image from 'next/image';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -54,10 +55,7 @@ export default function AuthPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setIsLoading(true);
 
     try {
@@ -67,14 +65,12 @@ export default function AuthPage() {
         router.push('/dashboard');
       } else {
         await register(formData.email, formData.password, formData.username);
-        setNotification({ 
-          message: 'Registrasi berhasil! Silakan login.', 
-          type: 'success' 
-        });
+        setNotification({ message: 'Registrasi berhasil! Silakan login.', type: 'success' });
         setIsLogin(true);
-        setFormData({ username: '', email: '', password: '' });
+        setFormData({ username: '', email: formData.email, password: '' });
       }
     } catch (error) {
+      console.error(error);
       let errorMessage = 'Terjadi kesalahan';
       
       switch (error.code) {
@@ -93,7 +89,6 @@ export default function AuthPage() {
         default:
           errorMessage = error.message;
       }
-      
       setNotification({ message: errorMessage, type: 'error' });
     } finally {
       setIsLoading(false);
@@ -113,8 +108,15 @@ export default function AuthPage() {
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-2xl font-bold">LOGO</span>
+          <div className="w-20 h-20 mx-auto mb-4">
+            <Image
+              src="/datakuy/logo.png"
+              alt="Logo Datakuy"
+              width={80}
+              height={80}
+              className="mx-auto rounded-full shadow-sm"
+              priority
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-800">
             {isLogin ? 'Selamat Datang Kembali' : 'Buat Akun Baru'}
@@ -122,12 +124,9 @@ export default function AuthPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Username Field (Register only) */}
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Username
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
               <input
                 type="text"
                 value={formData.username}
@@ -137,17 +136,12 @@ export default function AuthPage() {
                 }`}
                 placeholder="Masukkan username"
               />
-              {errors.username && (
-                <p className="mt-1 text-sm text-red-600">{errors.username}</p>
-              )}
+              {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
             </div>
           )}
 
-          {/* Email Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
             <input
               type="email"
               value={formData.email}
@@ -157,22 +151,14 @@ export default function AuthPage() {
               }`}
               placeholder="Masukkan email"
             />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-            )}
+            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
 
-          {/* Password Field */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Password</label>
               {isLogin && (
-                <button
-                  type="button"
-                  className="text-sm text-indigo-600 hover:text-indigo-500"
-                >
+                <button type="button" className="text-sm text-indigo-600 hover:text-indigo-500">
                   Lupa password?
                 </button>
               )}
@@ -186,12 +172,9 @@ export default function AuthPage() {
               }`}
               placeholder="Masukkan password"
             />
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-            )}
+            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={isLoading}
@@ -201,7 +184,6 @@ export default function AuthPage() {
           </button>
         </form>
 
-        {/* Toggle between Login/Register */}
         <div className="mt-6 text-center">
           <p className="text-gray-600">
             {isLogin ? 'Belum punya akun? ' : 'Sudah punya akun? '}
