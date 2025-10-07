@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   getIdToken
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
 const AuthContext = createContext();
@@ -28,11 +28,17 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
+  // ✅ Register dengan cek duplikat username/email
   const register = async (email, password, username) => {
+    // cek username/email sudah ada
+    const q1 = query(collection(db, 'users'), where('email', '==', email));
+    const q2 = query(collection(db, 'users'), where('username', '==', username));
+    const [emailDocs, userDocs] = await Promise.all([getDocs(q1), getDocs(q2)]);
+    if (!emailDocs.empty) throw new Error('auth/email-already-in-use');
+    if (!userDocs.empty) throw new Error('auth/username-already-in-use');
+
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-
-    // Pastikan token auth valid sebelum menulis ke Firestore
     await getIdToken(user, true);
 
     await setDoc(doc(db, 'users', user.uid), {
