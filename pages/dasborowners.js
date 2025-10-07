@@ -8,9 +8,9 @@ export default function DasborOwners() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState([]);
-  const [isOpen, setIsOpen] = useState(false); // popup utama
-  const [menuOpenId, setMenuOpenId] = useState(null); // dropdown per user
-  const [editingUser, setEditingUser] = useState(null); // user yg sedang diubah rolenya
+  const [isOpen, setIsOpen] = useState(false); // modal utama
+  const [menuOpenId, setMenuOpenId] = useState(null); // dropdown 3 titik
+  const [editingUser, setEditingUser] = useState(null); // user yg sedang diubah role-nya
 
   useEffect(() => {
     if (!user) return router.push('/auth');
@@ -24,7 +24,8 @@ export default function DasborOwners() {
       id: doc.id,
       ...doc.data(),
     }));
-    setUsers(userList.filter(u => u.role === 'owners' || u.role === 'users'));
+    // hanya tampilkan owners dan users
+    setUsers(userList.filter((u) => u.role === 'owners' || u.role === 'users'));
   };
 
   const handleLogout = async () => {
@@ -39,19 +40,17 @@ export default function DasborOwners() {
   };
 
   const handleRoleChange = async (id, newRole) => {
-  try {
-    const userRef = doc(db, 'users', id);
-    await updateDoc(userRef, { role: newRole });
-
-    alert(`Role pengguna berhasil diubah menjadi "${newRole}"`);
-
-    setEditingUser(null); // Tutup modal edit
-    fetchUsers(); // Refresh data di tabel
-  } catch (err) {
-    console.error('Gagal mengubah role:', err);
-    alert('Terjadi kesalahan saat mengubah role.');
-  }
-};
+    try {
+      const userRef = doc(db, 'users', id);
+      await updateDoc(userRef, { role: newRole });
+      alert(`Role pengguna berhasil diubah menjadi "${newRole}"`);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err) {
+      console.error('Gagal mengubah role:', err);
+      alert('Terjadi kesalahan saat mengubah role.');
+    }
+  };
 
   if (!user) return <div>Loading...</div>;
 
@@ -62,7 +61,9 @@ export default function DasborOwners() {
         <div className="max-w-7xl mx-auto px-4 flex justify-between h-16 items-center">
           <h1 className="text-xl font-semibold">Owner Dashboard</h1>
           <div className="flex items-center space-x-4">
-            <span className="text-gray-700">Halo, {user.username || user.email}</span>
+            <span className="text-gray-700">
+              Halo, {user.username || user.email}
+            </span>
             <button
               onClick={handleLogout}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
@@ -73,7 +74,7 @@ export default function DasborOwners() {
         </div>
       </nav>
 
-      {/* Tombol utama */}
+      {/* Tombol buka daftar pengguna */}
       <main className="max-w-6xl mx-auto py-10 text-center">
         <button
           onClick={() => setIsOpen(true)}
@@ -83,7 +84,7 @@ export default function DasborOwners() {
         </button>
       </main>
 
-      {/* Modal */}
+      {/* Modal daftar pengguna */}
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <div className="bg-white w-[90%] md:w-[70%] rounded-xl shadow-lg p-6 relative">
@@ -109,14 +110,14 @@ export default function DasborOwners() {
                       <td className="px-6 py-3 border-b">
                         <span
                           className={`px-2 py-1 rounded text-sm ${
-                            u.status ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            u.status
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
                           }`}
                         >
                           {u.status ? 'true' : 'false'}
                         </span>
                       </td>
-
-                      {/* Kolom Aksi (•••) */}
                       <td className="px-6 py-3 border-b text-right relative">
                         <button
                           onClick={() =>
@@ -127,7 +128,6 @@ export default function DasborOwners() {
                           &#x2022;&#x2022;&#x2022;
                         </button>
 
-                        {/* Dropdown kecil */}
                         {menuOpenId === u.id && (
                           <div className="absolute right-6 top-10 bg-white border rounded-lg shadow-lg w-28 z-10">
                             <button
@@ -174,7 +174,10 @@ export default function DasborOwners() {
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-80">
             <h3 className="text-lg font-semibold mb-3">Edit Role</h3>
-            <p className="text-sm mb-4">Ubah role untuk <b>{editingUser.email}</b></p>
+            <p className="text-sm mb-4">
+              Ubah role untuk <b>{editingUser.email}</b>
+            </p>
+
             <select
               className="border rounded-lg w-full px-3 py-2 mb-4"
               value={editingUser.role}
@@ -185,6 +188,7 @@ export default function DasborOwners() {
               <option value="users">users</option>
               <option value="owners">owners</option>
             </select>
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setEditingUser(null)}
@@ -193,11 +197,12 @@ export default function DasborOwners() {
                 Batal
               </button>
               <button
-                onClick={() => handleRoleChange(editingUser.id, editingUser.role)}
+                onClick={() =>
+                  handleRoleChange(editingUser.id, editingUser.role)
+                }
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
                 Simpan
-                </button>
               </button>
             </div>
           </div>
