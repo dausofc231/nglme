@@ -39,6 +39,7 @@ export function AuthProvider({ children }) {
       username,
       email,
       role: 'users',
+      status: true, // ✅ akun aktif secara default
       createdAt: new Date().toISOString()
     });
 
