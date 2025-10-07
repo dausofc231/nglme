@@ -156,7 +156,6 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      {/* ✅ Notification Custom */}
       {notification && (
         <Notification
           message={notification.message}
@@ -166,7 +165,6 @@ export default function AuthPage() {
       )}
 
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        {/* ✅ Logo */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 mx-auto mb-4">
             <Image
@@ -189,9 +187,7 @@ export default function AuthPage() {
           </h1>
         </div>
 
-        {/* ✅ FORM */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Username */}
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
@@ -208,7 +204,6 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* Email */}
           {(mode !== 'reset') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -225,7 +220,6 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* Password / New Password */}
           {(mode === 'login' || mode === 'register' || mode === 'reset') && (
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -289,7 +283,6 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={isLoading}
@@ -307,7 +300,6 @@ export default function AuthPage() {
           </button>
         </form>
 
-        {/* ✅ Footer */}
         <div className="mt-6 text-center">
           {mode === 'login' && (
             <p className="text-gray-600">
