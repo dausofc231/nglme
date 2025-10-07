@@ -7,7 +7,8 @@ import {
   onAuthStateChanged,
   getIdToken
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { useRouter } from 'next/router';
 import { auth, db } from '../lib/firebase';
 
 const AuthContext = createContext();
@@ -16,23 +17,57 @@ export function useAuth() { return useContext(AuthContext); }
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        setUser({ uid: user.uid, email: user.email, ...userDoc.data() });
-      } else setUser(null);
-      setLoading(false);
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+
+        // 🔁 Dengarkan perubahan realtime pada data user
+        const unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const mergedUser = { uid: firebaseUser.uid, email: firebaseUser.email, ...data };
+            setUser(mergedUser);
+
+            // ⚙️ Jika status = false → auto logout
+            if (data.status === false) {
+              await signOut(auth);
+              setUser(null);
+              router.push('/auth');
+              return;
+            }
+
+            // ⚙️ Pindahkan otomatis ke halaman sesuai role
+            const currentPath = router.pathname;
+            if (data.role === 'owners' && !currentPath.startsWith('/dasborowners')) {
+              router.push('/dasborowners');
+            } else if (data.role === 'users' && !currentPath.startsWith('/dashboard')) {
+              router.push('/dashboard');
+            }
+
+          } else {
+            // Jika data user dihapus → logout total
+            await signOut(auth);
+            setUser(null);
+            router.push('/auth');
+          }
+        });
+
+        return () => unsubscribeUser();
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
     });
-    return unsubscribe;
-  }, []);
+
+    return () => unsubscribeAuth();
+  }, [router]);
 
   const register = async (email, password, username) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-
-    // Pastikan token auth valid sebelum menulis ke Firestore
     await getIdToken(user, true);
 
     await setDoc(doc(db, 'users', user.uid), {
@@ -40,7 +75,7 @@ export function AuthProvider({ children }) {
       email,
       role: 'users',
       status: true,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     });
 
     return user;
@@ -53,6 +88,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     setUser(null);
     await signOut(auth);
+    router.push('/auth');
   };
 
   return (
@@ -60,5 +96,4 @@ export function AuthProvider({ children }) {
       {!loading && children}
     </AuthContext.Provider>
   );
-  }
-      
+}
