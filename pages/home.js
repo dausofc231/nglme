@@ -1,29 +1,29 @@
-// pages/home.js
+// pages/index.js
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { useAuth } from '../context/AuthContext';
 
-export default function HomePage() {
+export default function Home() {
+  const { user } = useAuth();
   const router = useRouter();
 
-  const goToRegister = () => {
-    router.push('/auth?mode=register'); // langsung ke form register
-  };
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'owners') {
+        router.push('/dasborowners');
+      } else {
+        router.push('/dashboard');
+      }
+    } else {
+      router.push('/home'); // diarahkan ke halaman home jika belum login
+    }
+  }, [user, router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-blue-200 p-6">
-      <div className="text-center max-w-lg">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          Selamat Datang di <span className="text-indigo-600">SamsulShop</span> 🛍️
-        </h1>
-        <p className="text-gray-600 mb-8">
-          Yuk gabung sekarang dan nikmati pengalaman belanja terbaikmu!
-        </p>
-
-        <button
-          onClick={goToRegister}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg shadow-md transition"
-        >
-          Daftar Sekarang
-        </button>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
       </div>
     </div>
   );
