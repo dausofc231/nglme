@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 
-export default function Home() {
+export default function IndexPage() {
   const { user } = useAuth();
   const router = useRouter();
 
@@ -11,7 +11,7 @@ export default function Home() {
     if (user) {
       router.push('/dashboard');
     } else {
-      router.push('/auth');
+      router.push('/home'); // ⬅️ arahkan ke halaman home baru
     }
   }, [user, router]);
 
@@ -23,4 +23,4 @@ export default function Home() {
       </div>
     </div>
   );
-    }
+}

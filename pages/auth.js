@@ -27,9 +27,11 @@ export default function AuthPage() {
 
   // ✅ Detect reset password mode
   useEffect(() => {
-    if (router.query.mode === 'resetPassword' && router.query.oobCode) {
-      setMode('reset');
-    }
+   if (router.query.mode === 'resetPassword' && router.query.oobCode) {
+    setMode('reset');
+  } else if (router.query.mode === 'register') {
+    setMode('register');
+  }
   }, [router.query]);
 
   // ✅ Redirect ke dashboard jika sudah login
