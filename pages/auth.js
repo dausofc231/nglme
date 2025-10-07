@@ -1,3 +1,4 @@
+// pages/auth.js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
@@ -96,16 +97,10 @@ export default function AuthPage() {
     setIsLoading(true);
     try {
       if (mode === 'login') {
-      const cred = await login(formData.email, formData.password);
-      const { uid } = cred.user;
-      const res = await fetch(`/api/getRole?uid=${uid}`);
-      const { role } = await res.json();
-      
-      setNotification({ message: 'Login berhasil!', type: 'success' });
-      if (role === 'owners') router.push('/dasborowners');
-      else if (role === 'admins') router.push('/dasboradmins');
-      else router.push('/dashboard');
-       }
+        await login(formData.email, formData.password);
+        setNotification({ message: 'Login berhasil!', type: 'success' });
+        router.push('/dashboard');
+      } 
       else if (mode === 'register') {
         await register(formData.email, formData.password, formData.username);
         await logout();
