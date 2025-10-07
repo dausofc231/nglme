@@ -11,7 +11,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export default function AuthPage() {
   const router = useRouter();
-  const { user, register, login } = useAuth();
+  const { user, register, login, logout } = useAuth();
 
   const [mode, setMode] = useState('login'); // login | register | forgot | reset
   const [formData, setFormData] = useState({
@@ -105,42 +105,58 @@ export default function AuthPage() {
 
   // ✅ Submit handler
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setIsLoading(true);
-    try {
-      if (mode === 'login') {
-        const userCred = await login(formData.email, formData.password);
-        const role = await getUserRole(userCred.user.uid);
-        const docRef = doc(db, 'users', userCred.user.uid);
-        const docSnap = await getDoc(docRef);
-        const userData = docSnap.data();
+  setIsLoading(true);
+  try {
+    if (mode === 'login') {
+      // 🔹 Cek dulu data user berdasarkan email
+      const q = query(collection(db, 'users'), where('email', '==', formData.email));
+      const querySnapshot = await getDocs(q);
 
-        // ✅ Jika akun dinonaktifkan (status = false)
-        if (userData && userData.status === false) {
-          setNotification({
-            message: 'Akun kamu telah dinonaktifkan oleh admin.',
-            type: 'error',
-          });
-          setIsLoading(false);
+      if (querySnapshot.empty) {
+        setNotification({ message: 'Email tidak terdaftar.', type: 'error' });
+        setFormData({ email: '', password: '' });
+        setIsLoading(false);
+        return;
+      }
 
-          // kosongkan password agar user tahu login gagal
-          setFormData((p) => ({ ...p, password: '' }));
-          return;
-        }
+      const userData = querySnapshot.docs[0].data();
 
-        // ✅ Jika akun aktif
-        setNotification({ message: 'Login berhasil!', type: 'success' });
+      // 🔹 Jika akun dinonaktifkan, langsung hentikan proses login
+      if (userData.status === false) {
+        setNotification({
+          message: 'Akun kamu telah dinonaktifkan oleh admin.',
+          type: 'error'
+        });
+        setFormData({ email: '', password: '' });
+        setIsLoading(false);
+        return;
+      }
 
-        if (role === 'owners') {
-          router.push('/dasborowners');
-        } else {
-          router.push('/dashboard');
-        }
-      } 
+      // 🔹 Jika aktif, baru lanjut login
+      const userCred = await login(formData.email, formData.password);
+      const role = await getUserRole(userCred.user.uid);
+
+      setNotification({ message: 'Login berhasil!', type: 'success' });
+
+      if (role === 'owners') {
+        router.push('/dasborowners');
+      } else {
+        router.push('/dashboard');
+      }
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    setNotification({ message: 'Email atau password salah.', type: 'error' });
+  } finally {
+    setIsLoading(false);
+  }
+}; 
       else if (mode === 'register') {
         await register(formData.email, formData.password, formData.username);
+        await logout();
         setNotification({ message: 'Registrasi berhasil! Silakan login.', type: 'success' });
         setMode('login');
         setFormData({ username: '', email: formData.email, password: '' });
