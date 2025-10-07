@@ -6,7 +6,8 @@ import Notification from '../components/Notification';
 import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
 import { sendPasswordResetEmail, confirmPasswordReset } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -28,16 +29,22 @@ export default function AuthPage() {
 
   // ✅ Detect reset password mode
   useEffect(() => {
-   if (router.query.mode === 'resetPassword' && router.query.oobCode) {
-    setMode('reset');
-  } else if (router.query.mode === 'register') {
-    setMode('register');
-  }
+    if (router.query.mode === 'resetPassword' && router.query.oobCode) {
+      setMode('reset');
+    } else if (router.query.mode === 'register') {
+      setMode('register');
+    }
   }, [router.query]);
 
   // ✅ Redirect ke dashboard jika sudah login
   useEffect(() => {
-    if (user && mode === 'login') router.push('/dashboard');
+    if (user && mode === 'login') {
+      if (user.role === 'owners') {
+        router.push('/dasborowners');
+      } else {
+        router.push('/dashboard');
+      }
+    }
   }, [user, mode, router]);
 
   // ✅ Mapping custom error Firebase
@@ -89,6 +96,13 @@ export default function AuthPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // ✅ Ambil role user dari Firestore
+  async function getUserRole(uid) {
+    const docRef = doc(db, 'users', uid);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? docSnap.data().role : 'users';
+  }
+
   // ✅ Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,9 +111,16 @@ export default function AuthPage() {
     setIsLoading(true);
     try {
       if (mode === 'login') {
-        await login(formData.email, formData.password);
+        const userCred = await login(formData.email, formData.password);
+        const role = await getUserRole(userCred.user.uid);
+
         setNotification({ message: 'Login berhasil!', type: 'success' });
-        router.push('/dashboard');
+
+        if (role === 'owners') {
+          router.push('/dasborowners');
+        } else {
+          router.push('/dashboard');
+        }
       } 
       else if (mode === 'register') {
         await register(formData.email, formData.password, formData.username);
