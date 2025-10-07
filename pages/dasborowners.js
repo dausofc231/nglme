@@ -38,13 +38,20 @@ export default function DasborOwners() {
     fetchUsers();
   };
 
-  const handleRoleChange = async (id, currentRole) => {
-    const newRole = currentRole === 'owners' ? 'users' : 'owners';
+  const handleRoleChange = async (id, newRole) => {
+  try {
     const userRef = doc(db, 'users', id);
     await updateDoc(userRef, { role: newRole });
-    setEditingUser(null);
-    fetchUsers();
-  };
+
+    alert(`Role pengguna berhasil diubah menjadi "${newRole}"`);
+
+    setEditingUser(null); // Tutup modal edit
+    fetchUsers(); // Refresh data di tabel
+  } catch (err) {
+    console.error('Gagal mengubah role:', err);
+    alert('Terjadi kesalahan saat mengubah role.');
+  }
+};
 
   if (!user) return <div>Loading...</div>;
 
@@ -190,6 +197,7 @@ export default function DasborOwners() {
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
                 Simpan
+                </button>
               </button>
             </div>
           </div>
