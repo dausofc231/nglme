@@ -11,7 +11,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export default function AuthPage() {
   const router = useRouter();
-  const { user, register, login, logout } = useAuth();
+  const { user, register, login } = useAuth();
 
   const [mode, setMode] = useState('login'); // login | register | forgot | reset
   const [formData, setFormData] = useState({
@@ -117,11 +117,20 @@ export default function AuthPage() {
         const docSnap = await getDoc(docRef);
         const userData = docSnap.data();
 
-      if (userData && userData.status === false) {await logout();
-        setNotification({ message: 'Akun kamu telah dinonaktifkan oleh admin.', type: 'error' });
-        setIsLoading(false);
-      return;
+        // ✅ Jika akun dinonaktifkan (status = false)
+        if (userData && userData.status === false) {
+          setNotification({
+            message: 'Akun kamu telah dinonaktifkan oleh admin.',
+            type: 'error',
+          });
+          setIsLoading(false);
+
+          // kosongkan password agar user tahu login gagal
+          setFormData((p) => ({ ...p, password: '' }));
+          return;
         }
+
+        // ✅ Jika akun aktif
         setNotification({ message: 'Login berhasil!', type: 'success' });
 
         if (role === 'owners') {
@@ -132,7 +141,6 @@ export default function AuthPage() {
       } 
       else if (mode === 'register') {
         await register(formData.email, formData.password, formData.username);
-        await logout();
         setNotification({ message: 'Registrasi berhasil! Silakan login.', type: 'success' });
         setMode('login');
         setFormData({ username: '', email: formData.email, password: '' });
