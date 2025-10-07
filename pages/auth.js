@@ -153,7 +153,6 @@ export default function AuthPage() {
   } finally {
     setIsLoading(false);
   }
-}; 
       else if (mode === 'register') {
         await register(formData.email, formData.password, formData.username);
         await logout();
