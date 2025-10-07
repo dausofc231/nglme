@@ -105,45 +105,32 @@ export default function AuthPage() {
 
   // ✅ Submit handler
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
+    e.preventDefault();
+    if (!validateForm()) return;
 
-  setIsLoading(true);
-  try {
-    if (mode === 'login') {
-      // 🟢 kode login hasil modifikasi tadi
-      const q = query(collection(db, 'users'), where('email', '==', formData.email));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        setNotification({ message: 'Email tidak terdaftar.', type: 'error' });
-        setFormData({ email: '', password: '' });
+    setIsLoading(true);
+    try {
+      if (mode === 'login') {
+        const userCred = await login(formData.email, formData.password);
+        const role = await getUserRole(userCred.user.uid);
+        const docRef = doc(db, 'users', userCred.user.uid);
+        const docSnap = await getDoc(docRef);
+        const userData = docSnap.data();
+      
+      if (userData && userData.status === false) {
+        await logout();
+        setNotification({ message: 'Akun kamu telah dinonaktifkan oleh admin.', type: 'error' });
         setIsLoading(false);
-        return;
+      return;
       }
+        setNotification({ message: 'Login berhasil!', type: 'success' });
 
-      const userData = querySnapshot.docs[0].data();
-      if (userData.status === false) {
-        setNotification({
-          message: 'Akun kamu telah dinonaktifkan oleh admin.',
-          type: 'error'
-        });
-        setFormData({ email: '', password: '' });
-        setIsLoading(false);
-        return;
-      }
-
-      const userCred = await login(formData.email, formData.password);
-      const role = await getUserRole(userCred.user.uid);
-
-      setNotification({ message: 'Login berhasil!', type: 'success' });
-
-      if (role === 'owners') {
-        router.push('/dasborowners');
-      } else {
-        router.push('/dashboard');
-      }
-    }
+        if (role === 'owners') {
+          router.push('/dasborowners');
+        } else {
+          router.push('/dashboard');
+        }
+      } 
       else if (mode === 'register') {
         await register(formData.email, formData.password, formData.username);
         await logout();
