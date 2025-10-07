@@ -111,7 +111,7 @@ export default function AuthPage() {
   setIsLoading(true);
   try {
     if (mode === 'login') {
-      // 🔹 Cek dulu data user berdasarkan email
+      // 🟢 kode login hasil modifikasi tadi
       const q = query(collection(db, 'users'), where('email', '==', formData.email));
       const querySnapshot = await getDocs(q);
 
@@ -123,8 +123,6 @@ export default function AuthPage() {
       }
 
       const userData = querySnapshot.docs[0].data();
-
-      // 🔹 Jika akun dinonaktifkan, langsung hentikan proses login
       if (userData.status === false) {
         setNotification({
           message: 'Akun kamu telah dinonaktifkan oleh admin.',
@@ -135,7 +133,6 @@ export default function AuthPage() {
         return;
       }
 
-      // 🔹 Jika aktif, baru lanjut login
       const userCred = await login(formData.email, formData.password);
       const role = await getUserRole(userCred.user.uid);
 
@@ -147,12 +144,6 @@ export default function AuthPage() {
         router.push('/dashboard');
       }
     }
-  } catch (error) {
-    console.error('Login error:', error);
-    setNotification({ message: 'Email atau password salah.', type: 'error' });
-  } finally {
-    setIsLoading(false);
-  }
       else if (mode === 'register') {
         await register(formData.email, formData.password, formData.username);
         await logout();
