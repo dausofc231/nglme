@@ -113,7 +113,15 @@ export default function AuthPage() {
       if (mode === 'login') {
         const userCred = await login(formData.email, formData.password);
         const role = await getUserRole(userCred.user.uid);
+        const docRef = doc(db, 'users', userCred.user.uid);
+        const docSnap = await getDoc(docRef);
+        const userData = docSnap.data();
 
+      if (userData && userData.status === false) {await logout();
+        setNotification({ message: 'Akun kamu telah dinonaktifkan oleh admin.', type: 'error' });
+        setIsLoading(false);
+      return;
+        }
         setNotification({ message: 'Login berhasil!', type: 'success' });
 
         if (role === 'owners') {
